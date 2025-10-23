@@ -1,4 +1,6 @@
 tests
 .idea
+moonbeam/.git
+starlight/.git
 starlight/Cargo.lock
 starlight/target
