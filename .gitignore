@@ -1,2 +1,4 @@
 tests
 .idea
+starlight/Cargo.lock
+starlight/target

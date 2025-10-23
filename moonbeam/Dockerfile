@@ -1,5 +1,5 @@
-FROM golang:1.25.3.trixie
-WORKDIR /app
+FROM golang:1.25.3-trixie
+WORKDIR /moonbeam
 COPY . .
 RUN go mod tidy && go build -o moonbeam .
 

@@ -5,6 +5,12 @@ services:
       - "8080:8080"
     networks:
       - monitor
+  starlight:
+    build: ../starlight
+    ports:
+      - "8090:8090"
+    networks:
+      - monitor
   prometheus:
     image: prom/prometheus:latest
     volumes:
