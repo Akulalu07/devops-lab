@@ -1,4 +1,4 @@
-name: devops-lab
+name: moonbeam
 on:
   push:
     branches: [ main ]
