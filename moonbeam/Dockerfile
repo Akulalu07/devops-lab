@@ -2,7 +2,7 @@ FROM golang:1.25.4-trixie AS builder
 WORKDIR /moonbeam
 ENV GOEXPERIMENT=greenteagc
 COPY . .
-RUN go mod download
+RUN go mod tidy
 
 RUN go build -o moonbeam .
 
