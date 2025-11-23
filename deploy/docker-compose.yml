@@ -1,16 +1,47 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: moonbeam
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - monitor
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   moonbeam:
     build: ../moonbeam
     ports:
       - "8080:8080"
+    environment:
+      PORT: "8080"
+      ENVIRONMENT: "production"
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      DB_USER: "postgres"
+      DB_PASSWORD: "postgres"
+      DB_NAME: "moonbeam"
+      DB_SSLMODE: "disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - monitor
-  starlight:
-    build: ../starlight
-    ports:
-      - "8090:8090"
-    networks:
-      - monitor
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   prometheus:
     image: prom/prometheus:latest
     volumes:
@@ -21,12 +52,18 @@ services:
       - "9090:9090"
     networks:
       - monitor
+    depends_on:
+      - moonbeam
+
   grafana:
     image: grafana/grafana-oss:latest
     ports:
       - "3000:3000"
     networks:
       - monitor
+
+volumes:
+  postgres_data:
 
 networks:
   monitor:
