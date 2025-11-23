@@ -44,8 +44,8 @@ func TestRouterRoutes(t *testing.T) {
 		{"Metrics", "GET", "/metrics", http.StatusOK},
 		{"GetUsers", "GET", "/api/v1/users", http.StatusOK},
 		{"GetUser", "GET", "/api/v1/users/1", http.StatusNotFound},
-		{"CreateUser", "POST", "/api/v1/users", http.StatusBadRequest}, // Bad request because no body
-		{"DeleteUser", "DELETE", "/api/v1/users/1", http.StatusOK},     // OK even if not found
+		{"CreateUser", "POST", "/api/v1/users", http.StatusBadRequest},
+		{"DeleteUser", "DELETE", "/api/v1/users/1", http.StatusOK},
 	}
 
 	for _, tt := range tests {
@@ -66,18 +66,15 @@ func TestRouterMiddleware(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	// Middleware should not interfere with normal requests
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestAPIRoutesGroup(t *testing.T) {
 	router := setupTestRouter(t)
 
-	// Test that API routes are properly grouped
 	req := httptest.NewRequest("GET", "/api/v1/users", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
-

@@ -24,7 +24,6 @@ func TestRecoveryMiddleware(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	// Recovery middleware should catch the panic and return 500
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
@@ -42,7 +41,5 @@ func TestRecoveryMiddlewareNormalRequest(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	// Normal requests should work fine
 	assert.Equal(t, http.StatusOK, w.Code)
 }
-

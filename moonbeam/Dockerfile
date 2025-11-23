@@ -1,9 +1,9 @@
 FROM golang:1.25.4-trixie AS builder
 WORKDIR /moonbeam
 ENV GOEXPERIMENT=greenteagc
-COPY go.mod ./
-RUN go mod download
 COPY . .
+RUN go mod download
+
 RUN go build -o moonbeam .
 
 FROM debian:bookworm-slim

@@ -25,7 +25,6 @@ func TestLoggerMiddleware(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	// Logger middleware should not interfere with request processing
 }
 
 func TestLoggerMiddlewareWithQuery(t *testing.T) {
@@ -44,4 +43,3 @@ func TestLoggerMiddlewareWithQuery(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
-

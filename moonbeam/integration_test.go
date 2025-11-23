@@ -19,7 +19,6 @@ import (
 )
 
 func setupIntegrationTest(t *testing.T) (*gin.Engine, *gorm.DB) {
-	// Use in-memory SQLite for integration tests
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
 
@@ -35,7 +34,6 @@ func setupIntegrationTest(t *testing.T) (*gin.Engine, *gorm.DB) {
 func TestIntegrationUserCRUD(t *testing.T) {
 	router, db := setupIntegrationTest(t)
 
-	// Create user
 	user := models.User{
 		Name:  "Integration Test User",
 		Email: "integration@test.com",
@@ -55,7 +53,6 @@ func TestIntegrationUserCRUD(t *testing.T) {
 	assert.Equal(t, "integration@test.com", createdUser.Email)
 	userID := createdUser.ID
 
-	// Get user
 	req = httptest.NewRequest("GET", "/api/v1/users/1", nil)
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -66,7 +63,6 @@ func TestIntegrationUserCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, userID, retrievedUser.ID)
 
-	// Get all users
 	req = httptest.NewRequest("GET", "/api/v1/users", nil)
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -77,14 +73,12 @@ func TestIntegrationUserCRUD(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, users, 1)
 
-	// Delete user
 	req = httptest.NewRequest("DELETE", "/api/v1/users/1", nil)
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	// Verify deletion
 	var deletedUser models.User
 	err = db.First(&deletedUser, 1).Error
 	assert.Error(t, err)
@@ -124,4 +118,3 @@ func TestIntegrationMetrics(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "http_requests_total")
 }
-

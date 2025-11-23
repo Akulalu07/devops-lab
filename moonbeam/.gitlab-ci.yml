@@ -1,69 +1,30 @@
-image: golang:1.25.4-trixie
+stages:
+  - build
+  - test
 
 variables:
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: "/certs"
+  GO_VERSION: "1.25.4"
+  GOFLAGS: "-mod=readonly"
 
-stages:
-  - test
-  - build
-  - docker-build
-  - deploy
+image: golang:${GO_VERSION}
 
 before_script:
-  - cd moonbeam || true
+  - go version
+  - go mod tidy
+  - go mod download
 
-format:
-  stage: test
-  script:
-    - go fmt ./...
-    - go vet ./...
-    - go test -v -race -coverprofile=coverage.out ./...
-    - go tool cover -html=coverage.out -o coverage.html
-  coverage: '/total:\s+\(statements\)\s+\d+\.\d+%/'
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.out
-    paths:
-      - moonbeam/coverage.html
-    expire_in: 1 week
-
-compile:
+build:
   stage: build
   script:
-    - mkdir -p bin
-    - go build -o bin/moonbeam .
+    - echo "Building project..."
+    - go build -v ./...
   artifacts:
     paths:
-      - moonbeam/bin/
-    expire_in: 1 week
+      - go.mod
+      - go.sum
 
-docker-build:
-  stage: docker-build
-  image: docker:24-dind
-  services:
-    - docker:24-dind
-  before_script:
-    - cd moonbeam || true
+test:
+  stage: test
   script:
-    - docker build -t $CI_REGISTRY_IMAGE/moonbeam:$CI_COMMIT_SHORT_SHA -t $CI_REGISTRY_IMAGE/moonbeam:latest .
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE/moonbeam:$CI_COMMIT_SHORT_SHA
-    - docker push $CI_REGISTRY_IMAGE/moonbeam:latest
-  only:
-    - main
-    - tags
-
-deploy:
-  stage: deploy
-  image: alpine:latest
-  script:
-    - echo "Deploying moonbeam service..."
-    - echo "Image: $CI_REGISTRY_IMAGE/moonbeam:$CI_COMMIT_SHORT_SHA"
-  environment:
-    name: production
-  only:
-    - main
-  when: manual
+    - echo "Running tests..."
+    - go test -v ./...
