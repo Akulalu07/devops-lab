@@ -1,29 +1,50 @@
 package main
 
 import (
-	"moonbeam/internal/config"
-	"moonbeam/internal/database"
-	"moonbeam/internal/logger"
-	"moonbeam/internal/router"
+	"log"
+	"net/http"
 
+	chiProm "github.com/766b/chi-prometheus"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
 
+type zapAdapter struct {
+	*zap.SugaredLogger
+}
+
+// chi ожидает интерфейс с методом Print
+func (l *zapAdapter) Print(v ...interface{}) {
+	l.SugaredLogger.Info(v...)
+}
+
 func main() {
-	log := logger.Init()
-	defer log.Sync()
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	sugar := logger.Sugar()
 
-	cfg := config.Load()
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Recoverer)
 
-	db, err := database.Init(cfg)
-	if err != nil {
-		log.Fatal("Failed to initialize database", zap.Error(err))
-	}
+	r.Use(middleware.RequestLogger(
+		&middleware.DefaultLogFormatter{
+			Logger:  &zapAdapter{sugar},
+			NoColor: true,
+		},
+	))
 
-	r := router.NewRouter(log, db)
+	m := chiProm.NewMiddleware("moonbeam")
+	r.Use(m)
+	r.Handle("/metrics", promhttp.Handler())
 
-	log.Info("Starting moonbeam service", zap.String("port", cfg.Port))
-	if err := r.Run(":" + cfg.Port); err != nil {
-		log.Fatal("Failed to start server", zap.Error(err))
-	}
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello World!"))
+	})
+
+	log.Println("listening on :8080")
+	http.ListenAndServe(":8080", r)
 }

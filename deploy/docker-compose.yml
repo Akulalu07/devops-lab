@@ -1,6 +1,11 @@
 services:
   postgres:
     image: postgres:17-alpine
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -19,17 +24,13 @@ services:
 
   moonbeam:
     build: ../moonbeam
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "8080:8080"
-    environment:
-      PORT: "8080"
-      ENVIRONMENT: "production"
-      DB_HOST: "postgres"
-      DB_PORT: "5432"
-      DB_USER: "postgres"
-      DB_PASSWORD: "postgres"
-      DB_NAME: "moonbeam"
-      DB_SSLMODE: "disable"
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,28 +43,79 @@ services:
       retries: 3
       start_period: 40s
 
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
+  promtail:
+    image: grafana/promtail:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    container_name: promtail
     ports:
-      - "9090:9090"
+      - "9080:9080"
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yaml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    privileged: true
     networks:
       - monitor
-    depends_on:
-      - moonbeam
+
+  loki:
+    image: grafana/loki:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+    networks:
+      - monitor
+
+  prometheus:
+    image: prom/prometheus:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheusdata:/prometheus
+    networks:
+      - monitor
 
   grafana:
-    image: grafana/grafana-oss:latest
+    image: grafana/grafana:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    container_name: grafana
     ports:
       - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - grafanadata:/var/lib/grafana
     networks:
       - monitor
 
 volumes:
   postgres_data:
+  grafanadata:
+  prometheusdata:
 
 networks:
   monitor:

@@ -1,7 +1,7 @@
 tests
 .idea
 moonbeam/.git
-
+moonbeam/moonbeam
 *.exe
 *.exe~
 *.dll
